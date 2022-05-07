@@ -6,13 +6,17 @@
       <ui-button type="outlined" @click="openModal">
         Team erfassen
       </ui-button>
+      <ui-button type="outlined" @click="openResetModal">
+        Neu starten
+      </ui-button>
     </header>
 
     <main>
       <div class="teams">
         <teams v-for="(team, i) in $store.state.teams" :key="team.name" :team="team" :number="i"/>
       </div>
-      <questions @openQuestion="openQuestion"/>
+      <topics v-if="Object.keys(store.state.questions).length === 0" />
+      <questions v-else @openQuestion="openQuestion"/>
     </main>
 
     <div ref="addTeamModal" class="small modal">
@@ -58,69 +62,79 @@
         </div>
       </div>
     </div>
+
+    <div ref="resetModal" class="small modal">
+      <form @submit.prevent="() => { store.commit('resetStore'); closeModals(); sureToRestart = false; }">
+        <h2>Bist du sicher, dass du neu starten möchtest?</h2>
+        <hr>
+        <ui-form-field>
+          <ui-checkbox
+              type="filled"
+              v-model="sureToRestart"
+              input-id="restartCheckbox"
+          />
+          <label for="restartCheckbox">Yes</label>
+        </ui-form-field>
+        <div class="text-right mt-8">
+          <ui-button class="btn-red" :disabled="!sureToRestart" :type="0" native-type="submit">
+            Neustart
+          </ui-button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue';
 import { useStore } from 'vuex';
 import Teams from './components/Teams';
 import Questions from './components/Questions';
+import Topics from './components/Topics';
 
-export default {
-  name: 'App',
-  components: { Questions, Teams },
-  setup() {
-    const store = useStore();
-    const addTeamModal = ref(null);
-    const questionModal = ref(null);
-    const backdrop = ref(null);
-    const teamName = ref('');
-    const currentQuestion = ref(null);
+const store = useStore();
+const addTeamModal = ref(null);
+const questionModal = ref(null);
+const resetModal = ref(null);
+const backdrop = ref(null);
+const teamName = ref('');
+const currentQuestion = ref(null);
+const sureToRestart = ref(false);
 
-    const openModal = () => {
-      addTeamModal.value.classList.toggle('open');
-      backdrop.value.classList.toggle('open');
-    };
+const openModal = () => {
+  addTeamModal.value.classList.toggle('open');
+  backdrop.value.classList.toggle('open');
+};
 
-    const openQuestion = (payload) => {
-      currentQuestion.value = payload;
-      questionModal.value.classList.toggle('open');
-      backdrop.value.classList.toggle('open');
-    };
+const openQuestion = (payload) => {
+  currentQuestion.value = payload;
+  questionModal.value.classList.toggle('open');
+  backdrop.value.classList.toggle('open');
+};
 
-    const closeModals = () => {
-      addTeamModal.value.classList.remove('open');
-      questionModal.value.classList.remove('open');
-      backdrop.value.classList.remove('open');
-    }
+const openResetModal = () => {
+  resetModal.value.classList.toggle('open');
+  backdrop.value.classList.toggle('open');
+}
 
-    const addTeam = () => {
-      store.commit('addTeam', teamName.value);
-      teamName.value = '';
-      openModal();
-    };
+const closeModals = () => {
+  addTeamModal.value.classList.remove('open');
+  questionModal.value.classList.remove('open');
+  resetModal.value.classList.remove('open');
+  backdrop.value.classList.remove('open');
+}
 
-    const addPoints = (teamName, fullPoints = true) => {
-      const points = fullPoints ? currentQuestion.value.question.score : currentQuestion.value.question.score / 2;
-      store.commit('addPoints', { name: teamName, points });
-      store.commit('questionAnswered', currentQuestion.value);
-      closeModals();
-    };
+const addTeam = () => {
+  store.commit('addTeam', teamName.value);
+  teamName.value = '';
+  openModal();
+};
 
-    return {
-      addTeamModal,
-      questionModal,
-      currentQuestion,
-      backdrop,
-      teamName,
-      openModal,
-      openQuestion,
-      closeModals,
-      addTeam,
-      addPoints,
-    };
-  }
+const addPoints = (teamName, fullPoints = true) => {
+  const points = fullPoints ? currentQuestion.value.question.score : currentQuestion.value.question.score / 2;
+  store.commit('addPoints', { name: teamName, points });
+  store.commit('questionAnswered', currentQuestion.value);
+  closeModals();
 };
 </script>
 
@@ -129,6 +143,8 @@ main {
   max-width: 1200px;
   margin: 0 auto;
   padding-top: 5rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 header {
@@ -202,5 +218,9 @@ header {
     min-width: 250px;
     align-self: flex-end;
   }
+}
+
+.btn-red:not(:disabled) {
+  color: var(--color-red) !important;
 }
 </style>

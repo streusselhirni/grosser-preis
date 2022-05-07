@@ -1,10 +1,11 @@
 import { createStore } from 'vuex';
-import questions from '../questions';
+import allQuestions from '../questions';
 
 export default createStore({
   state: {
     teams: [],
-    questions,
+    topics: allQuestions,
+    questions: {},
   },
   mutations: {
     addTeam(state, payload) {
@@ -18,6 +19,11 @@ export default createStore({
       if (idx > -1) {
         state.teams.splice(idx, 1);
       }
+    },
+    selectTopics(state, payload) {
+      payload.forEach((topic) => {
+        state.questions[topic] = state.topics[topic];
+      });
     },
     addPoints(state, payload) {
       const team = state.teams.find((t) => t.name === payload.name);
@@ -35,7 +41,11 @@ export default createStore({
       if (question) {
         question.answered = true;
       }
-    }
+    },
+    resetStore(state) {
+      state.teams = [];
+      state.questions = {};
+    },
   },
   actions: {
   },
